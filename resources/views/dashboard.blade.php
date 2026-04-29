@@ -58,6 +58,15 @@
                 </strong>
                 <p class="mt-2 text-sm text-slate-500">Store Rating</p>
             </div>
+            
+            {{-- Incoming Orders card --}}
+            <a href="{{ route('orders.incoming') }}"
+               class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-slate-200 hover:ring-green-400 hover:bg-green-50 transition group">
+                <strong class="text-3xl text-green-700">{{ $activeOrders }}</strong>
+                <p class="mt-2 text-sm text-slate-500">Incoming Orders</p>
+                <p class="mt-2 text-xs font-semibold text-green-600 group-hover:underline">Manage orders →</p>
+            </a>
+
         </div>
 
         {{-- Product table --}}

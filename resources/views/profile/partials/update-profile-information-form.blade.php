@@ -1,7 +1,9 @@
 <section>
     <header>
         <h2 class="text-lg font-medium text-gray-900">Profile Information</h2>
-        <p class="mt-1 text-sm text-gray-600">Update your account details{{ auth()->user()->isFarmer() ? ', farm info, and social links' : '' }}.</p>
+        <p class="mt-1 text-sm text-gray-600">
+            Update your account details{{ auth()->user()->isFarmer() ? ', farm info, and social links' : '' }}.
+        </p>
     </header>
 
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">
@@ -31,7 +33,8 @@
                 <div class="mt-2">
                     <p class="text-sm text-gray-800">
                         Your email is unverified.
-                        <button form="send-verification" class="underline text-sm text-gray-600 hover:text-gray-900">
+                        <button form="send-verification"
+                            class="underline text-sm text-gray-600 hover:text-gray-900">
                             Resend verification email.
                         </button>
                     </p>
@@ -58,12 +61,11 @@
             <x-input-error class="mt-2" :messages="$errors->get('address')" />
         </div>
 
-        {{-- ── FARMER-ONLY FIELDS ── --}}
-        @if ($user->isFarmer())
+        {{-- ── FARMER ONLY ── --}}
+        @if($user->isFarmer())
             <hr class="border-gray-200">
             <p class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Farm Details</p>
 
-            {{-- Farm Name --}}
             <div>
                 <x-input-label for="farm_name" value="Farm Name" />
                 <x-text-input id="farm_name" name="farm_name" type="text" class="mt-1 block w-full"
@@ -71,7 +73,6 @@
                 <x-input-error class="mt-2" :messages="$errors->get('farm_name')" />
             </div>
 
-            {{-- Bio --}}
             <div>
                 <x-input-label for="bio" value="Short Bio" />
                 <textarea id="bio" name="bio" rows="3"
@@ -79,7 +80,6 @@
                 <x-input-error class="mt-2" :messages="$errors->get('bio')" />
             </div>
 
-            {{-- Location --}}
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <x-input-label for="latitude" value="Latitude" />
@@ -95,14 +95,13 @@
                 </div>
             </div>
             <p class="text-xs text-gray-400 -mt-4">
-                You can find your coordinates at
-                <a href="https://www.latlong.net/" target="_blank" class="underline">latlong.net</a>.
+                Find your coordinates at <a href="https://www.latlong.net/" target="_blank" class="underline">latlong.net</a>.
             </p>
 
-            {{-- ── SOCIAL LINKS ── --}}
+            {{-- Social Links --}}
             <hr class="border-gray-200">
             <p class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Social Links</p>
-            <p class="text-xs text-gray-500 -mt-4">Add your Facebook, Instagram, TikTok, or any other page buyers can reach you on.</p>
+            <p class="text-xs text-gray-500 -mt-4">Add Facebook, Instagram, TikTok, or any page buyers can reach you on.</p>
 
             <div id="social-links-container" class="space-y-3">
                 @php
@@ -115,12 +114,13 @@
                         : $user->socialLinks;
                 @endphp
 
-                @foreach ($existingLinks as $i => $link)
+                @foreach($existingLinks as $i => $link)
                     <div class="social-row flex gap-2 items-start">
                         <select name="social_platform[{{ $i }}]"
                             class="mt-1 border-gray-300 rounded-md shadow-sm text-sm w-36 shrink-0">
-                            @foreach (['Facebook','Instagram','TikTok','Twitter/X','YouTube','LinkedIn','Website','Other'] as $p)
-                                <option value="{{ $p }}" {{ ($link['platform'] ?? $link->platform ?? '') === $p ? 'selected' : '' }}>
+                            @foreach(['Facebook','Instagram','TikTok','Twitter/X','YouTube','LinkedIn','Website','Other'] as $p)
+                                <option value="{{ $p }}"
+                                    {{ ($link['platform'] ?? $link->platform ?? '') === $p ? 'selected' : '' }}>
                                     {{ $p }}
                                 </option>
                             @endforeach
@@ -140,11 +140,11 @@
             </div>
 
             <button type="button" id="add-social-link"
-                class="text-sm text-green-600 hover:text-green-800 font-medium mt-2">
+                class="text-sm text-green-600 hover:text-green-800 font-medium">
                 + Add another link
             </button>
         @endif
-        {{-- ── END FARMER FIELDS ── --}}
+        {{-- ── END FARMER ONLY ── --}}
 
         <div class="flex items-center gap-4">
             <x-primary-button>Save</x-primary-button>
@@ -158,14 +158,13 @@
     </form>
 </section>
 
-@if (auth()->user()->isFarmer())
+@if(auth()->user()->isFarmer())
 <script>
-    let rowIndex = {{ $existingLinks->count() ?? count($existingLinks ?? []) }};
+    let rowIndex = {{ count($existingLinks ?? []) }};
 
     document.getElementById('add-social-link').addEventListener('click', () => {
         const container = document.getElementById('social-links-container');
         const platforms = ['Facebook','Instagram','TikTok','Twitter/X','YouTube','LinkedIn','Website','Other'];
-
         const options = platforms.map(p => `<option value="${p}">${p}</option>`).join('');
 
         container.insertAdjacentHTML('beforeend', `
@@ -176,10 +175,10 @@
                 </select>
                 <input type="text" name="social_label[${rowIndex}]"
                     placeholder="Label (e.g. Official Page)"
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" />
                 <input type="url" name="social_url[${rowIndex}]"
                     placeholder="https://..."
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" />
                 <button type="button" onclick="this.closest('.social-row').remove()"
                     class="mt-1 text-red-400 hover:text-red-600 text-lg leading-none px-1">✕</button>
             </div>

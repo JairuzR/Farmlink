@@ -22,16 +22,16 @@ class ProfileUpdateRequest extends FormRequest
 
         if ($user->isFarmer()) {
             $rules = array_merge($rules, [
-                'farm_name'       => ['nullable', 'string', 'max:120'],
-                'bio'             => ['nullable', 'string', 'max:1000'],
-                'latitude'        => ['nullable', 'numeric', 'between:-90,90'],
-                'longitude'       => ['nullable', 'numeric', 'between:-180,180'],
-                'social_platform' => ['nullable', 'array'],
+                'farm_name'         => ['nullable', 'string', 'max:120'],
+                'bio'               => ['nullable', 'string', 'max:1000'],
+                'latitude'          => ['nullable', 'numeric', 'between:-90,90'],
+                'longitude'         => ['nullable', 'numeric', 'between:-180,180'],
+                'social_platform'   => ['nullable', 'array'],
                 'social_platform.*' => ['nullable', 'string', 'max:50'],
-                'social_label'    => ['nullable', 'array'],
-                'social_label.*'  => ['nullable', 'string', 'max:100'],
-                'social_url'      => ['nullable', 'array'],
-                'social_url.*'    => ['nullable', 'url', 'max:500'],
+                'social_label'      => ['nullable', 'array'],
+                'social_label.*'    => ['nullable', 'string', 'max:100'],
+                'social_url'        => ['nullable', 'array'],
+                'social_url.*'      => ['nullable', 'url', 'max:500'],
             ]);
         }
 

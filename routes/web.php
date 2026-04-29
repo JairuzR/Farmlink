@@ -16,9 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'welcome')->name('home');
 Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace');
 Route::get('/farmers', [MarketplaceController::class, 'farmers'])->name('farmers');
-Route::get('/products/{product:slug}', [ProductController::class, 'show'])
-    ->name('products.show')
-    ->where('product', '(?!create|edit)[a-z0-9\-]+');
 
 // --- Cart & Orders (auth required) ---
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -32,7 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/orders/{order}/delivered', [OrderController::class, 'markDelivered'])->name('orders.mark-delivered');
 });
 
-// --- Dashboard (approved check so unapproved farmers can't sneak in) ---
+// --- Dashboard ---
 Route::get('/dashboard', function () {
     $user = auth()->user();
 
@@ -110,8 +107,10 @@ Route::middleware(['auth', 'verified', 'role:farmer', 'approved'])->group(functi
     Route::delete('/products/{product:slug}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::patch('/products/{product:slug}/toggle', [ProductController::class, 'toggleAvailability'])->name('products.toggle');
     Route::get('/orders/incoming', [OrderController::class, 'incoming'])->name('orders.incoming');
-    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name(name: 'orders.update-status');
-
+    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
 });
+
+// --- Public product show (must be AFTER farmer group to avoid route conflicts) ---
+Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
 require __DIR__.'/auth.php';
