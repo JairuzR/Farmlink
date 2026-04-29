@@ -6,6 +6,9 @@ use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\ProductController;
+use App\Models\User;
+
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -19,9 +22,6 @@ Route::post('/checkout', [OrderController::class, 'checkout'])->name('checkout')
 Route::get('/orders/pending', [OrderController::class, 'pending'])->name('orders.pending');
 Route::get('/orders/delivered', [OrderController::class, 'delivered'])->name('orders.delivered');
 Route::patch('/orders/{order}/delivered', [OrderController::class, 'markDelivered'])->name('orders.mark-delivered');
-Route::get('/products/create', [MarketplaceController::class, 'create'])->middleware(['auth', 'verified'])->name('products.create');
-Route::post('/products', [MarketplaceController::class, 'store'])->middleware(['auth', 'verified'])->name('products.store');
-Route::get('/products/{product}', [MarketplaceController::class, 'show'])->name('products.show');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -49,6 +49,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
     Route::get('/2fa/challenge', [TwoFactorController::class, 'challenge'])->name('2fa.challenge');
     Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
+});
+
+Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+
+Route::middleware(['auth', 'verified', 'role:farmer', 'approved'])->group(function () {
+    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::get('/products/{product:slug}/edit', [ProductController::class, 'edit'])->name('products.edit');
+    Route::patch('/products/{product:slug}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('/products/{product:slug}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::patch('/products/{product:slug}/toggle', [ProductController::class, 'toggleAvailability'])->name('products.toggle');
 });
 
 require __DIR__.'/auth.php';

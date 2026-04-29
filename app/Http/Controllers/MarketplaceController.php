@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\FarmlinkCatalog;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -11,48 +12,37 @@ class MarketplaceController extends Controller
 {
     public function index(Request $request): View
     {
-        $category = $request->query('category', 'All Products');
+        $query = Product::with(['farmer', 'primaryImage', 'category', 'tags', 'reviews'])
+            ->withAvg('reviews', 'rating')
+            ->available();
 
-        return view('marketplace', [
-            'categories' => FarmlinkCatalog::categories(),
-            'category' => $category,
-            'products' => FarmlinkCatalog::filtered($category),
-        ]);
-    }
+        // Search
+        if ($search = $request->query('search')) {
+            $query->search($search);
+        }
 
-    public function show(string $product): View
-    {
-        abort_unless($item = FarmlinkCatalog::find($product), 404);
+        // Filter by category slug
+        if ($category = $request->query('category')) {
+            $query->byCategory($category);
+        }
 
-        return view('products.show', ['product' => $item]);
-    }
+        // Filter by tag slug
+        if ($tag = $request->query('tag')) {
+            $query->whereHas('tags', fn($q) => $q->where('slug', $tag));
+        }
 
-    public function create(): View
-    {
-        return view('products.create', [
-            'categories' => array_slice(FarmlinkCatalog::categories(), 1),
-        ]);
-    }
+        // Sort
+        match ($request->query('sort', 'newest')) {
+            'price_asc'  => $query->orderBy('price', 'asc'),
+            'price_desc' => $query->orderBy('price', 'desc'),
+            'rating'     => $query->withAvg('reviews', 'rating')->orderByDesc('reviews_avg_rating'),
+            default      => $query->latest(),
+        };
 
-    public function store(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'farm' => ['required', 'string', 'max:120'],
-            'price' => ['required', 'numeric', 'min:1'],
-            'unit' => ['required', 'string', 'max:20'],
-            'category' => ['required', 'string', 'max:80'],
-            'stock' => ['required', 'integer', 'min:1'],
-            'minimum' => ['required', 'integer', 'min:1'],
-            'pickup' => ['required', 'string', 'max:160'],
-            'image' => ['nullable', 'url'],
-            'description' => ['required', 'string', 'max:500'],
-        ]);
+        $products   = $query->paginate(12)->withQueryString();
+        $categories = Category::orderBy('name')->get();
+        $tags       = Tag::whereNull('user_id')->orderBy('name')->get();
 
-        $product = FarmlinkCatalog::addProduct($data);
-
-        return redirect()
-            ->route('products.show', $product['slug'])
-            ->with('status', 'Product added to the marketplace.');
+        return view('marketplace', compact('products', 'categories', 'tags'));
     }
 }
