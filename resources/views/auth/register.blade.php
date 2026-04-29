@@ -81,18 +81,18 @@
                             <x-input-error :messages="$errors->get('farmer_id')" class="mt-2" />
                         </div>
 
-                        <!-- Location -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <x-input-label for="latitude" :value="__('Latitude (optional)')" />
-                                <x-text-input id="latitude" class="block mt-1 w-full" type="number" step="any" name="latitude" :value="old('latitude')" />
-                                <x-input-error :messages="$errors->get('latitude')" class="mt-2" />
-                            </div>
-                            <div>
-                                <x-input-label for="longitude" :value="__('Longitude (optional)')" />
-                                <x-text-input id="longitude" class="block mt-1 w-full" type="number" step="any" name="longitude" :value="old('longitude')" />
-                                <x-input-error :messages="$errors->get('longitude')" class="mt-2" />
-                            </div>
+                        <!-- Location via map -->
+                        <div>
+                            <x-input-label :value="__('Farm Location (optional)')" />
+                            <p class="text-xs text-gray-400 mb-2">Click the map to drop a pin on your farm's location. You can also set this later from your profile.</p>
+
+                            {{-- Hidden inputs that get filled when user clicks the map --}}
+                            <input type="hidden" name="latitude"  id="latitude"  value="{{ old('latitude') }}">
+                            <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
+
+                            <div id="register-map" class="mt-1 rounded-lg border border-gray-300 overflow-hidden" style="height: 280px;"></div>
+
+                            <p id="pin-status" class="mt-1 text-xs text-gray-400">No location selected.</p>
                         </div>
                         <p class="text-xs text-gray-400">You can set your exact location later from your profile.</p>
 
@@ -197,6 +197,67 @@
                             btn.closest('.social-link-row').remove();
                         }
                     }
+                </script>
+
+                {{-- Leaflet for registration map --}}
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+                <script>
+                // Only init the map when farmer fields are visible
+                function initRegisterMap() {
+                    if (window._registerMapInit) return;
+                    window._registerMapInit = true;
+
+                    // Default center: Cagayan de Oro — adjust if you want
+                    const map = L.map('register-map').setView([8.4542, 124.6319], 11);
+
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    }).addTo(map);
+
+                    let marker = null;
+
+                    // If old() values exist (validation failed, repopulating), restore the pin
+                    const oldLat = parseFloat('{{ old('latitude') }}');
+                    const oldLng = parseFloat('{{ old('longitude') }}');
+                    if (oldLat && oldLng) {
+                        marker = L.marker([oldLat, oldLng]).addTo(map);
+                        map.setView([oldLat, oldLng], 14);
+                        document.getElementById('pin-status').textContent = `📍 ${oldLat.toFixed(5)}, ${oldLng.toFixed(5)}`;
+                    }
+
+                    map.on('click', function (e) {
+                        const { lat, lng } = e.latlng;
+
+                        // Move existing marker or create new one
+                        if (marker) {
+                            marker.setLatLng([lat, lng]);
+                        } else {
+                            marker = L.marker([lat, lng]).addTo(map);
+                        }
+
+                        // Fill the hidden inputs
+                        document.getElementById('latitude').value  = lat.toFixed(7);
+                        document.getElementById('longitude').value = lng.toFixed(7);
+                        document.getElementById('pin-status').textContent = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                    });
+                }
+
+                // Hook into the existing toggleFarmerFields function
+                const _originalToggle = window.toggleFarmerFields;
+                window.toggleFarmerFields = function(show) {
+                    _originalToggle(show);
+                    if (show) {
+                        // Leaflet needs the container to be visible before it can init
+                        setTimeout(initRegisterMap, 50);
+                    }
+                };
+
+                // If farmer is pre-selected on page load (e.g. old() after validation fail)
+                if (document.querySelector('input[name="role"][value="farmer"]')?.checked) {
+                    setTimeout(initRegisterMap, 50);
+                }
                 </script>
 
         </div>

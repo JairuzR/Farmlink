@@ -2,88 +2,95 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\FarmlinkCatalog;
+use App\Models\Order;
+use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class OrderController extends Controller
 {
-    public function checkout(): RedirectResponse
+    public function checkout(Request $request): RedirectResponse
     {
-        $items = FarmlinkCatalog::cartItems();
+        $request->validate([
+            'delivery_address' => ['required', 'string'],
+            'payment_method'   => ['required', 'in:cod,gcash,maya'],
+        ]);
 
-        if ($items === []) {
-            return redirect()->route('cart')->with('status', 'Your cart is empty.');
+        $user  = auth()->user();
+        $items = $user->cartItems()->with('product')->get();
+
+        if ($items->isEmpty()) {
+            return back()->with('error', 'Your cart is empty.');
         }
 
-        $order = [
-            'id' => 'FL-'.now()->format('Ymd').'-'.Str::upper(Str::random(4)),
-            'created_at' => now()->format('F j, Y g:i A'),
-            'status' => 'Pending',
-            'items' => $items,
-            'totals' => FarmlinkCatalog::cartTotals(),
-        ];
+        // One order per farmer
+        foreach ($items->groupBy(fn($i) => $i->product->user_id) as $farmerId => $farmerItems) {
+            $total = $farmerItems->sum(fn($i) => $i->product->price * $i->quantity);
 
-        session()->push('orders.pending', $order);
-        session()->forget('cart');
+            $order = Order::create([
+                'buyer_id'         => $user->id,
+                'farmer_id'        => $farmerId,
+                'status'           => 'pending',
+                'total'            => $total,
+                'delivery_address' => $request->delivery_address,
+                'payment_method'   => $request->payment_method,
+                'payment_status'   => 'pending',
+            ]);
 
-        return redirect()->route('orders.pending')->with('status', 'Order placed. The farmer will confirm it soon.');
+            foreach ($farmerItems as $item) {
+                $order->items()->create([
+                    'product_id'    => $item->product_id,
+                    'quantity'      => $item->quantity,
+                    'price_at_time' => $item->product->price,
+                ]);
+            }
+
+            \App\Models\Transaction::create([
+                'order_id'     => $order->id,
+                'amount'       => $total,
+                'platform_cut' => round($total * 0.05, 2),
+                'method'       => $request->payment_method,
+                'status'       => 'pending',
+            ]);
+        }
+
+        $user->cartItems()->delete();
+
+        return redirect()->route('orders.pending')
+            ->with('success', 'Order placed! The farmer will confirm it soon.');
     }
 
     public function pending(): View
     {
-        return view('orders.pending', [
-            'orders' => array_reverse(session('orders.pending', [])),
-        ]);
+        $orders = auth()->user()
+            ->buyerOrders()
+            ->with(['items.product.primaryImage', 'items.product.farmer'])
+            ->whereNotIn('status', ['delivered', 'cancelled'])
+            ->latest()
+            ->get();
+
+        return view('orders.pending', compact('orders'));
     }
 
     public function delivered(): View
     {
-        return view('orders.delivered', [
-            'orders' => array_reverse(session('orders.delivered', self::sampleDeliveredOrders())),
-        ]);
+        $orders = auth()->user()
+            ->buyerOrders()
+            ->with(['items.product.primaryImage', 'items.product.farmer'])
+            ->where('status', 'delivered')
+            ->latest()
+            ->get();
+
+        return view('orders.delivered', compact('orders'));
     }
 
-    public function markDelivered(string $order): RedirectResponse
+    public function markDelivered(Order $order): RedirectResponse
     {
-        $pending = session('orders.pending', []);
-        $delivered = session('orders.delivered', self::sampleDeliveredOrders());
+        abort_unless($order->buyer_id === auth()->id(), 403);
 
-        foreach ($pending as $index => $pendingOrder) {
-            if ($pendingOrder['id'] === $order) {
-                $pendingOrder['status'] = 'Delivered';
-                $pendingOrder['delivered_at'] = now()->format('F j, Y');
-                $delivered[] = $pendingOrder;
-                unset($pending[$index]);
-                break;
-            }
-        }
+        $order->update(['status' => 'delivered']);
 
-        session(['orders.pending' => array_values($pending), 'orders.delivered' => $delivered]);
-
-        return redirect()->route('orders.delivered')->with('status', 'Order marked as delivered.');
-    }
-
-    private static function sampleDeliveredOrders(): array
-    {
-        $product = FarmlinkCatalog::find('fresh-tomatoes');
-
-        return [[
-            'id' => 'FL-20260418-TOMA',
-            'created_at' => 'April 18, 2026',
-            'delivered_at' => 'April 18, 2026',
-            'status' => 'Delivered',
-            'items' => [[
-                'product' => $product,
-                'quantity' => 2,
-                'line_total' => 240,
-            ]],
-            'totals' => [
-                'subtotal' => 240,
-                'delivery' => 50,
-                'total' => 290,
-            ],
-        ]];
+        return redirect()->route('orders.delivered')
+            ->with('success', 'Order marked as delivered.');
     }
 }

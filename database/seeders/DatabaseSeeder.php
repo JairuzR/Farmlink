@@ -15,31 +15,32 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'admin@farmlink.test'],
-            [
-                'name' => 'FARMLINK Admin',
-                'role' => 'admin',
-                'password' => 'password',
-            ],
-        );
+        User::create([
+            'name'               => 'Admin',
+            'email'              => 'admin@farmlink.test',
+            'password'           => bcrypt('password'),
+            'role'               => 'admin',
+            'is_approved'        => true,
+            'email_verified_at'  => now(),
+        ]);
 
-        User::updateOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'role' => 'buyer',
-                'password' => 'password',
-            ],
-        );
-        User::updateOrCreate(
-            ['email' => 'farmer@example.com'],
-            [
-                'name' => 'Test Farmer',
-                'role' => 'farmer',
-                'password' => 'password',
-            ],
-        );
+        User::create([
+            'name'               => 'Test',
+            'email'              => 'test@farmlink.test',
+            'password'           => bcrypt('password'),
+            'role'               => 'buyer',
+            'is_approved'        => true,
+            'email_verified_at'  => now(),
+        ]);
+
+        User::create([
+            'name'               => 'Test Farmer',
+            'email'              => 'farmer@farmlink.test',
+            'password'           => bcrypt('password'),
+            'role'               => 'farmer',
+            'is_approved'        => true,
+            'email_verified_at'  => now(),
+        ]);
 
         $this->call([
             CategorySeeder::class,

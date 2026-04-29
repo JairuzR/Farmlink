@@ -45,4 +45,28 @@ class MarketplaceController extends Controller
 
         return view('marketplace', compact('products', 'categories', 'tags'));
     }
+
+    public function farmers(): \Illuminate\View\View
+    {
+        $farmers = \App\Models\User::where('role', 'farmer')
+            ->where('is_approved', true)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->withCount(['products' => fn($q) => $q->where('is_available', true)])
+            ->with('socialLinks')
+            ->get(['id', 'name', 'farm_name', 'latitude', 'longitude', 'bio', 'phone']);
+
+        $farmersJson = $farmers->map(fn($f) => [
+            'id'        => $f->id,
+            'name'      => $f->name,
+            'farm_name' => $f->farm_name,
+            'lat'       => (float) $f->latitude,
+            'lng'       => (float) $f->longitude,
+            'products'  => $f->products_count,
+            'rating'    => null, // add avg rating later if needed
+            'url'       => route('marketplace', ['search' => $f->farm_name ?? $f->name]),
+        ])->values();
+
+        return view('farmers', compact('farmers', 'farmersJson'));
+    }
 }

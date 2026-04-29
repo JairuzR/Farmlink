@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 // --- Public routes ---
 Route::view('/', 'welcome')->name('home');
 Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace');
-Route::view('/farmers', 'farmers')->name('farmers');
+Route::get('/farmers', [MarketplaceController::class, 'farmers'])->name('farmers');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
 // --- Cart & Orders (auth required) ---
@@ -48,9 +48,23 @@ Route::get('/dashboard', function () {
         return view('dashboard', compact('products', 'totalRevenue', 'activeOrders', 'avgRating'));
     }
 
+    if ($user->isAdmin()) {
+        $pendingFarmers  = \App\Models\User::where('role', 'farmer')->where('is_approved', false)->count();
+        $totalFarmers    = \App\Models\User::where('role', 'farmer')->where('is_approved', true)->count();
+        $totalBuyers     = \App\Models\User::where('role', 'buyer')->count();
+        $totalProducts   = \App\Models\Product::count();
+        $totalOrders     = \App\Models\Order::count();
+        $totalRevenue    = \App\Models\Order::where('payment_status', 'paid')->sum('total');
+        return view('dashboard', compact('pendingFarmers', 'totalFarmers', 'totalBuyers', 'totalProducts', 'totalOrders', 'totalRevenue'));
+    }
+
     // Buyer dashboard
-    $recentOrders = $user->buyerOrders()->with('items.product')->latest()->take(5)->get();
-    return view('dashboard', compact('recentOrders'));
+    $recentOrders    = $user->buyerOrders()->with('items.product')->latest()->take(5)->get();
+    $totalOrders     = $user->buyerOrders()->count();
+    $pendingOrders   = $user->buyerOrders()->whereNotIn('status', ['delivered', 'cancelled'])->count();
+    $deliveredOrders = $user->buyerOrders()->where('status', 'delivered')->count();
+    $totalSpent      = $user->buyerOrders()->where('payment_status', 'paid')->sum('total');
+    return view('dashboard', compact('recentOrders', 'totalOrders', 'pendingOrders', 'deliveredOrders', 'totalSpent'));
 })->middleware(['auth', 'verified', 'approved'])->name('dashboard');
 
 // --- Profile ---

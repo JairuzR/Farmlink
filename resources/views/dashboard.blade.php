@@ -147,66 +147,264 @@
         {{-- ==================== BUYER DASHBOARD ==================== --}}
         @elseif(auth()->user()->isBuyer())
 
-        <div>
-            <h1 class="text-4xl font-bold text-slate-950">My Orders</h1>
-            <p class="mt-2 text-slate-600">Welcome back, {{ auth()->user()->name }}.</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-950">My Account</h1>
+                <p class="mt-1 text-slate-500">Welcome back, {{ auth()->user()->name }}.</p>
+            </div>
+            <a href="{{ route('marketplace') }}"
+               class="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+                Browse Marketplace
+            </a>
         </div>
 
-        @if($recentOrders->isEmpty())
-            <div class="mt-8 rounded-lg border-2 border-dashed border-slate-200 p-10 text-center">
-                <p class="text-slate-500">No orders yet.</p>
-                <a href="{{ route('marketplace') }}"
-                   class="mt-3 inline-block text-sm font-semibold text-green-600 hover:underline">
-                    Browse the marketplace →
-                </a>
-            </div>
-        @else
-        <div class="mt-8 space-y-4">
-            @foreach($recentOrders as $order)
-            <div class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span class="font-semibold text-slate-800">Order #{{ $order->id }}</span>
-                    <span @class([
-                        'rounded-full px-3 py-1 text-xs font-semibold',
-                        'bg-yellow-100 text-yellow-700' => $order->status === 'pending',
-                        'bg-blue-100 text-blue-700'     => in_array($order->status, ['confirmed', 'preparing']),
-                        'bg-purple-100 text-purple-700' => $order->status === 'out_for_delivery',
-                        'bg-green-100 text-green-700'   => $order->status === 'delivered',
-                        'bg-red-100 text-red-600'       => $order->status === 'cancelled',
-                        'bg-slate-100 text-slate-600'   => !in_array($order->status, ['pending','confirmed','preparing','out_for_delivery','delivered','cancelled']),
-                    ])>{{ ucfirst(str_replace('_', ' ', $order->status)) }}</span>
+        {{-- Top stat cards --}}
+        <div class="mt-6 grid gap-4 sm:grid-cols-3">
+            {{-- Profile card --}}
+            <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200 flex items-center gap-4">
+                <div class="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-green-100 text-2xl">
+                    👤
                 </div>
-                <div class="mt-3 space-y-1">
-                    @foreach($order->items as $item)
-                        <div class="flex justify-between text-sm text-slate-600">
-                            <span>{{ $item->product->title ?? '[deleted product]' }} × {{ $item->quantity }}</span>
-                            <span>₱{{ number_format($item->lineTotal(), 2) }}</span>
+                <div class="min-w-0">
+                    <p class="font-bold text-slate-900 truncate">{{ auth()->user()->name }}</p>
+                    <p class="text-sm text-slate-500">Customer</p>
+                    @if(auth()->user()->email)
+                        <p class="mt-1 text-xs text-slate-400 truncate">{{ auth()->user()->email }}</p>
+                    @endif
+                    @if(auth()->user()->phone)
+                        <p class="text-xs text-slate-400">{{ auth()->user()->phone }}</p>
+                    @endif
+                    @if(auth()->user()->address)
+                        <p class="text-xs text-slate-400 truncate">{{ auth()->user()->address }}</p>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Pending orders --}}
+            <a href="{{ route('orders.pending') }}"
+               class="rounded-xl bg-orange-50 p-5 shadow-sm ring-1 ring-orange-100 hover:ring-orange-300 transition group">
+                <div class="flex items-start justify-between">
+                    <span class="text-2xl">📦</span>
+                    <span class="text-3xl font-bold text-orange-500">{{ $pendingOrders }}</span>
+                </div>
+                <p class="mt-3 font-semibold text-slate-800">Pending Orders</p>
+                <p class="text-sm text-slate-500 group-hover:text-orange-600">Click to view details</p>
+            </a>
+
+            {{-- Delivered orders --}}
+            <a href="{{ route('orders.delivered') }}"
+               class="rounded-xl bg-green-50 p-5 shadow-sm ring-1 ring-green-100 hover:ring-green-300 transition group">
+                <div class="flex items-start justify-between">
+                    <span class="text-2xl">✅</span>
+                    <span class="text-3xl font-bold text-green-600">{{ $deliveredOrders }}</span>
+                </div>
+                <p class="mt-3 font-semibold text-slate-800">Completed Orders</p>
+                <p class="text-sm text-slate-500 group-hover:text-green-600">Click to view history</p>
+            </a>
+        </div>
+
+        {{-- Stats + Settings --}}
+        <div class="mt-6 grid gap-6 lg:grid-cols-2">
+
+            {{-- Order Statistics --}}
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <h2 class="text-lg font-bold text-slate-900">Order Statistics</h2>
+                <div class="mt-4 space-y-3">
+                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+                        <span class="text-sm text-slate-600">Total Orders</span>
+                        <span class="font-bold text-slate-900">{{ $totalOrders }}</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-lg bg-orange-50 px-4 py-3">
+                        <span class="text-sm text-slate-600">In Progress</span>
+                        <span class="font-bold text-orange-500">{{ $pendingOrders }}</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-lg bg-green-50 px-4 py-3">
+                        <span class="text-sm text-slate-600">Completed</span>
+                        <span class="font-bold text-green-600">{{ $deliveredOrders }}</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+                        <span class="text-sm text-slate-600">Total Spent</span>
+                        <span class="font-bold text-green-700">₱{{ number_format($totalSpent, 2) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Account Settings --}}
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <h2 class="text-lg font-bold text-slate-900">Account Settings</h2>
+                <div class="mt-4 space-y-2">
+                    <a href="{{ route('profile.edit') }}"
+                       class="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-slate-50 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg">👤</span>
+                            <span class="text-sm font-medium text-slate-700">Edit Profile</span>
                         </div>
-                    @endforeach
-                </div>
-                <div class="mt-3 border-t border-slate-100 pt-3 flex justify-between text-sm font-semibold">
-                    <span>Total</span>
-                    <span class="text-green-700">₱{{ number_format($order->total, 2) }}</span>
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="{{ route('orders.pending') }}"
+                       class="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-slate-50 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg">📍</span>
+                            <span class="text-sm font-medium text-slate-700">My Orders</span>
+                        </div>
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="{{ route('2fa.setup') }}"
+                       class="flex items-center justify-between rounded-lg px-4 py-3 hover:bg-slate-50 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg">🔒</span>
+                            <span class="text-sm font-medium text-slate-700">Two-Factor Auth</span>
+                        </div>
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
                 </div>
             </div>
-            @endforeach
+        </div>
+
+        {{-- Promo: become a farmer --}}
+        <div class="mt-6 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-6 ring-1 ring-green-200">
+            <p class="text-lg">🌾 <span class="font-semibold text-green-800">Are you a farmer?</span></p>
+            <p class="mt-1 text-sm text-slate-600">Switch to farmer view to manage your products, track sales, and connect with customers!</p>
+            <a href="{{ route('register') }}"
+               class="mt-4 inline-block rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+                Register as Farmer
+            </a>
+        </div>
+
+        {{-- Recent orders list --}}
+        @if($recentOrders->isNotEmpty())
+        <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-slate-900">Recent Orders</h2>
+                <a href="{{ route('orders.pending') }}" class="text-sm font-medium text-green-600 hover:underline">View all →</a>
+            </div>
+            <div class="space-y-3">
+                @foreach($recentOrders as $order)
+                <div class="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">
+                            ORD-{{ str_pad($order->id, 3, '0', STR_PAD_LEFT) }}
+                        </p>
+                        <p class="text-xs text-slate-500">{{ $order->created_at->format('M d, Y') }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span @class([
+                            'rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                            'bg-yellow-100 text-yellow-700' => $order->status === 'pending',
+                            'bg-blue-100 text-blue-700'     => in_array($order->status, ['confirmed','preparing']),
+                            'bg-purple-100 text-purple-700' => $order->status === 'out_for_delivery',
+                            'bg-green-100 text-green-700'   => $order->status === 'delivered',
+                            'bg-red-100 text-red-600'       => $order->status === 'cancelled',
+                        ])>{{ ucfirst(str_replace('_', ' ', $order->status)) }}</span>
+                        <p class="mt-1 text-sm font-bold text-green-700">₱{{ number_format($order->total, 2) }}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
         </div>
         @endif
+
 
         {{-- ==================== ADMIN DASHBOARD ==================== --}}
         @elseif(auth()->user()->isAdmin())
 
-        <div class="rounded-lg bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
-            <h1 class="text-2xl font-bold text-slate-950">Admin Panel</h1>
-            <p class="mt-2 text-slate-500">Manage farmer approvals and platform settings.</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-950">Admin Panel</h1>
+                <p class="mt-1 text-slate-500">Platform overview and management.</p>
+            </div>
             <a href="{{ route('admin.farmers.pending') }}"
-               class="mt-5 inline-block rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700">
-                View Pending Farmers
+               class="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+                Review Farmers
             </a>
         </div>
 
-        @endif
+        {{-- Stat cards --}}
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <a href="{{ route('admin.farmers.pending') }}"
+               class="rounded-xl {{ $pendingFarmers > 0 ? 'bg-yellow-50 ring-1 ring-yellow-200' : 'bg-white ring-1 ring-slate-200' }} p-6 shadow-sm hover:shadow-md transition">
+                <p class="text-3xl">🌾</p>
+                <p class="mt-3 text-3xl font-bold {{ $pendingFarmers > 0 ? 'text-yellow-600' : 'text-slate-800' }}">{{ $pendingFarmers }}</p>
+                <p class="mt-1 font-semibold text-slate-700">Pending Approvals</p>
+                <p class="text-sm text-slate-500">{{ $pendingFarmers > 0 ? 'Action required' : 'All caught up!' }}</p>
+            </a>
 
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <p class="text-3xl">✅</p>
+                <p class="mt-3 text-3xl font-bold text-green-700">{{ $totalFarmers }}</p>
+                <p class="mt-1 font-semibold text-slate-700">Approved Farmers</p>
+                <p class="text-sm text-slate-500">Active on platform</p>
+            </div>
+
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <p class="text-3xl">🛒</p>
+                <p class="mt-3 text-3xl font-bold text-blue-600">{{ $totalBuyers }}</p>
+                <p class="mt-1 font-semibold text-slate-700">Registered Buyers</p>
+                <p class="text-sm text-slate-500">Restaurants, supermarkets</p>
+            </div>
+
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <p class="text-3xl">🥦</p>
+                <p class="mt-3 text-3xl font-bold text-slate-800">{{ $totalProducts }}</p>
+                <p class="mt-1 font-semibold text-slate-700">Listed Products</p>
+                <p class="text-sm text-slate-500">Across all farmers</p>
+            </div>
+
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <p class="text-3xl">📦</p>
+                <p class="mt-3 text-3xl font-bold text-slate-800">{{ $totalOrders }}</p>
+                <p class="mt-1 font-semibold text-slate-700">Total Orders</p>
+                <p class="text-sm text-slate-500">All time</p>
+            </div>
+
+            <div class="rounded-xl bg-green-50 p-6 shadow-sm ring-1 ring-green-200">
+                <p class="text-3xl">💰</p>
+                <p class="mt-3 text-3xl font-bold text-green-700">₱{{ number_format($totalRevenue, 2) }}</p>
+                <p class="mt-1 font-semibold text-slate-700">Platform Revenue</p>
+                <p class="text-sm text-slate-500">From paid orders</p>
+            </div>
+        </div>
+
+        {{-- Quick actions --}}
+        <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <a href="{{ route('admin.farmers.pending') }}"
+                   class="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:bg-slate-50 transition">
+                    <span class="text-xl">🌾</span>
+                    <div>
+                        <p class="font-semibold text-slate-800">Farmer Approvals</p>
+                        <p class="text-xs text-slate-500">Review pending applications</p>
+                    </div>
+                </a>
+                <a href="{{ route('marketplace') }}"
+                   class="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:bg-slate-50 transition">
+                    <span class="text-xl">🛒</span>
+                    <div>
+                        <p class="font-semibold text-slate-800">View Marketplace</p>
+                        <p class="text-xs text-slate-500">Browse all listed products</p>
+                    </div>
+                </a>
+                <a href="{{ route('farmers') }}"
+                   class="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:bg-slate-50 transition">
+                    <span class="text-xl">🗺️</span>
+                    <div>
+                        <p class="font-semibold text-slate-800">Farmer Map</p>
+                        <p class="text-xs text-slate-500">See registered farmer locations</p>
+                    </div>
+                </a>
+                <a href="{{ route('profile.edit') }}"
+                   class="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:bg-slate-50 transition">
+                    <span class="text-xl">⚙️</span>
+                    <div>
+                        <p class="font-semibold text-slate-800">Account Settings</p>
+                        <p class="text-xs text-slate-500">Update admin profile</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        @endif
     </div>
 </section>
 @endsection

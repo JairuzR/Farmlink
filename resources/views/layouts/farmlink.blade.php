@@ -29,28 +29,94 @@
                 </div>
 
                 <div class="flex items-center gap-3 text-slate-700">
-                    @php($cartCount = array_sum(session('cart', [])))
-                    <a href="{{ route('cart') }}" class="relative rounded-full p-2 hover:bg-slate-100" aria-label="Cart">
-                        @if ($cartCount > 0)
-                            <span class="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-green-600 text-xs font-semibold text-white">{{ $cartCount }}</span>
-                        @endif
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <path d="M6 6h15l-2 8H8L6 6Z" />
-                            <path d="M6 6 5 3H2" />
-                            <path d="M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-                            <path d="M18 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-                        </svg>
-                    </a>
 
                     @auth
-                        <a href="{{ route('dashboard') }}" class="rounded-full p-2 hover:bg-slate-100" aria-label="Account">
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                <path d="M20 21a8 8 0 0 0-16 0" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                        </a>
+                        {{-- Cart icon (buyers only) --}}
+                        @if(auth()->user()->isBuyer())
+                            @php($cartCount = auth()->user()->cartItems()->count())
+                            <a href="{{ route('cart') }}" class="relative rounded-full p-2 hover:bg-slate-100" aria-label="Cart">
+                                @if($cartCount > 0)
+                                    <span class="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-green-600 text-xs font-semibold text-white">{{ $cartCount }}</span>
+                                @endif
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <path d="M6 6h15l-2 8H8L6 6Z" />
+                                    <path d="M6 6 5 3H2" />
+                                    <path d="M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+                                    <path d="M18 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+                                </svg>
+                            </a>
+                        @endif
+
+                        {{-- User dropdown --}}
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open"
+                                class="flex items-center gap-2 rounded-full p-2 hover:bg-slate-100"
+                                aria-label="Account menu">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M20 21a8 8 0 0 0-16 0" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                                <span class="hidden text-sm font-medium md:block">{{ auth()->user()->name }}</span>
+                                <svg class="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <div x-show="open" @click.outside="open = false" x-transition
+                                class="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 bg-white py-1 shadow-lg z-50">
+
+                                {{-- Role badge --}}
+                                <div class="border-b border-slate-100 px-4 py-2">
+                                    <p class="text-xs text-slate-500">Signed in as</p>
+                                    <p class="truncate text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</p>
+                                    <span class="mt-0.5 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                        {{ ucfirst(auth()->user()->role) }}
+                                    </span>
+                                </div>
+
+                                <a href="{{ route('dashboard') }}"
+                                class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                    Dashboard
+                                </a>
+
+                                <a href="{{ route('profile.edit') }}"
+                                class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                    Profile Settings
+                                </a>
+
+                                {{-- Buyer: prompt to also become a farmer --}}
+                                @if(auth()->user()->isBuyer())
+                                    <div class="border-t border-slate-100 mt-1">
+                                        <a href="{{ route('register') }}"
+                                        class="flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50">
+                                            Register as Farmer
+                                        </a>
+                                    </div>
+                                @endif
+
+                                {{-- Logout --}}
+                                <div class="border-t border-slate-100 mt-1">
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit"
+                                            class="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                            Log Out
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
                     @else
-                        <a href="{{ route('login') }}" class="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50">Login</a>
+                        {{-- Logged out: show Login + Register --}}
+                        <a href="{{ route('login') }}"
+                        class="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50">
+                            Login
+                        </a>
+                        <a href="{{ route('register') }}"
+                        class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                            Register
+                        </a>
                     @endauth
                 </div>
             </div>
@@ -81,8 +147,12 @@
                         <a href="{{ route('home') }}">Home</a>
                         <a href="{{ route('marketplace') }}">Marketplace</a>
                         <a href="{{ route('farmers') }}">Farmers</a>
-                        <a href="{{ route('register') }}">Register</a>
-                        <a href="{{ route('dashboard') }}">Farmer Dashboard</a>
+                        @guest
+                            <a href="{{ route('register') }}">Register</a>
+                        @endguest
+                        @auth
+                            <a href="{{ route('dashboard') }}">Dashboard</a>
+                        @endauth
                     </div>
                 </div>
                 <div>

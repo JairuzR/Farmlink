@@ -162,7 +162,7 @@
                 @if($product->is_available && $product->status !== 'out_of_stock')
                 <form method="POST" action="{{ route('cart.store') }}" class="mt-5 flex gap-3">
                     @csrf
-                    <input type="hidden" name="product" value="{{ $product->slug }}">
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <input type="number" name="quantity"
                            value="{{ $product->minimum_order }}"
                            min="{{ $product->minimum_order }}"

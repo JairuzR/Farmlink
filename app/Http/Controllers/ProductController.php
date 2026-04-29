@@ -98,7 +98,13 @@ class ProductController extends Controller
     // Public: show single product
     public function show(Product $product): View
     {
-        $product->load(['farmer.socialLinks', 'category', 'tags', 'images', 'reviews.user']);
+        $product->load([
+        'farmer.socialLinks',
+        'images',
+        'tags',
+        'reviews.user',
+        'category',
+    ]);
 
         return view('products.show', compact('product'));
     }

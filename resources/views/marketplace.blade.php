@@ -165,7 +165,7 @@
                             @if($product->is_available && $product->status !== 'out_of_stock')
                                 <form method="POST" action="{{ route('cart.store') }}">
                                     @csrf
-                                    <input type="hidden" name="product" value="{{ $product->slug }}">
+                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
                                     <input type="hidden" name="quantity" value="{{ $product->minimum_order }}">
                                     <button type="submit"
                                         class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 active:scale-95 transition">
