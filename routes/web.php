@@ -7,6 +7,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
 use App\Models\User;
 
 use Illuminate\Support\Facades\Route;
@@ -24,7 +25,25 @@ Route::get('/orders/delivered', [OrderController::class, 'delivered'])->name('or
 Route::patch('/orders/{order}/delivered', [OrderController::class, 'markDelivered'])->name('orders.mark-delivered');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $user = auth()->user();
+
+    if ($user->isFarmer()) {
+        $products = $user->products()->with('reviews')->withCount('reviews')->latest()->get();
+        $totalRevenue = $user->farmerOrders()
+            ->where('payment_status', 'paid')
+            ->sum('total');
+        $activeOrders = $user->farmerOrders()
+            ->whereNotIn('status', ['delivered', 'cancelled'])
+            ->count();
+        $avgRating = \App\Models\Review::whereHas('product', fn($q) => $q->where('user_id', $user->id))
+            ->avg('rating');
+
+        return view('dashboard', compact('products', 'totalRevenue', 'activeOrders', 'avgRating'));
+    }
+
+    // Buyer dashboard (basic for now)
+    $recentOrders = $user->buyerOrders()->with('items.product')->latest()->take(5)->get();
+    return view('dashboard', compact('recentOrders'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -60,6 +79,9 @@ Route::middleware(['auth', 'verified', 'role:farmer', 'approved'])->group(functi
     Route::patch('/products/{product:slug}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product:slug}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::patch('/products/{product:slug}/toggle', [ProductController::class, 'toggleAvailability'])->name('products.toggle');
+    Route::post('/products/{product:slug}/reviews', [ReviewController::class, 'store'])
+    ->name('reviews.store')
+    ->middleware(['auth', 'verified', 'role:buyer']);
 });
 
 require __DIR__.'/auth.php';
