@@ -17,7 +17,8 @@
             <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-8">
                     <a href="{{ route('home') }}" class="flex items-center gap-2">
-                        <span class="grid h-10 w-10 place-items-center rounded-lg bg-green-600 text-xl text-white">🌾</span>
+                        {{-- <span class="grid h-10 w-10 place-items-center rounded-lg bg-green-600 text-xl text-white">🌾</span> --}}
+                        <img src="{{ asset('build/assets/images/logo.jpg') }}" alt="FARMLINK Logo" class="h-10 w-10 rounded-lg object-cover">
                         <span class="text-2xl font-bold text-green-800">FARMLINK</span>
                     </a>
 
@@ -63,47 +64,61 @@
                             </button>
 
                             <div x-show="open" @click.outside="open = false" x-transition
-                                class="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 bg-white py-1 shadow-lg z-50">
+                                class="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white py-1 shadow-lg z-50">
 
                                 {{-- Role badge --}}
-                                <div class="border-b border-slate-100 px-4 py-2">
+                                <div class="border-b border-slate-100 px-4 py-3">
                                     <p class="text-xs text-slate-500">Signed in as</p>
                                     <p class="truncate text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</p>
-                                    <span class="mt-0.5 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                    <span class="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                                         {{ ucfirst(auth()->user()->role) }}
                                     </span>
                                 </div>
 
-                                <a href="{{ route('dashboard') }}"
-                                class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                                    Dashboard
-                                </a>
-
-                                <a href="{{ route('profile.edit') }}"
-                                class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                                    Profile Settings
-                                </a>
+                                <div class="py-1">
+                                    <a href="{{ route('dashboard') }}"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                        </svg>
+                                        Dashboard
+                                    </a>
+                                    <a href="{{ route('profile.edit') }}"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                        </svg>
+                                        Profile Settings
+                                    </a>
+                                </div>
 
                                 {{-- Buyer: prompt to also become a farmer --}}
                                 @if(auth()->user()->isBuyer())
-                                    <div class="border-t border-slate-100 mt-1">
+                                    <div class="border-t border-slate-100 py-1">
                                         <a href="{{ route('register') }}"
-                                        class="flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50">
+                                        class="flex items-center gap-3 px-4 py-2 text-sm text-green-700 hover:bg-green-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                            </svg>
                                             Register as Farmer
                                         </a>
                                     </div>
                                 @endif
 
                                 {{-- Logout --}}
-                                <div class="border-t border-slate-100 mt-1">
+                                <div class="border-t border-slate-100 py-1">
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
                                         <button type="submit"
-                                            class="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                            class="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
+                                            </svg>
                                             Log Out
                                         </button>
                                     </form>
                                 </div>
+
                             </div>
                         </div>
 
@@ -136,7 +151,8 @@
             <div class="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-4 lg:px-8">
                 <div>
                     <div class="mb-4 flex items-center gap-2">
-                        <span class="grid h-10 w-10 place-items-center rounded-lg bg-green-600 text-xl text-white">🌾</span>
+                        {{-- <span class="grid h-10 w-10 place-items-center rounded-lg bg-green-600 text-xl text-white">🌾</span> --}}
+                        <img src="{{ asset('build/assets/images/logo.jpg') }}" alt="FARMLINK Logo" class="h-10 w-10 rounded-lg object-cover">
                         <span class="text-xl font-bold text-white">FARMLINK</span>
                     </div>
                     <p class="text-sm leading-6 text-slate-400">Connecting Filipino farmers directly to consumers for a sustainable future.</p>

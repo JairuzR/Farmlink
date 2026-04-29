@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'welcome')->name('home');
 Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace');
 Route::get('/farmers', [MarketplaceController::class, 'farmers'])->name('farmers');
-Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/products/{product:slug}', [ProductController::class, 'show'])
+    ->name('products.show')
+    ->where('product', '(?!create|edit)[a-z0-9\-]+');
 
 // --- Cart & Orders (auth required) ---
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -49,9 +51,9 @@ Route::get('/dashboard', function () {
     }
 
     if ($user->isAdmin()) {
-        $pendingFarmers  = \App\Models\User::where('role', 'farmer')->where('is_approved', false)->count();
-        $totalFarmers    = \App\Models\User::where('role', 'farmer')->where('is_approved', true)->count();
-        $totalBuyers     = \App\Models\User::where('role', 'buyer')->count();
+        $pendingFarmers  = User::where('role', 'farmer')->where('is_approved', false)->count();
+        $totalFarmers    = User::where('role', 'farmer')->where('is_approved', true)->count();
+        $totalBuyers     = User::where('role', 'buyer')->count();
         $totalProducts   = \App\Models\Product::count();
         $totalOrders     = \App\Models\Order::count();
         $totalRevenue    = \App\Models\Order::where('payment_status', 'paid')->sum('total');
