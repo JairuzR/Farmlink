@@ -136,6 +136,8 @@ class ProductController extends Controller
             'new_tags'        => ['nullable', 'string', 'max:300'],
             'images'          => ['nullable', 'array', 'max:5'],
             'images.*'        => ['image', 'max:3072'],
+            'delete_images'   => ['nullable', 'array'],
+            'delete_images.*' => ['integer', 'exists:product_images,id'],
         ]);
 
         $product->update([
@@ -151,6 +153,23 @@ class ProductController extends Controller
             'is_available'    => $request->boolean('is_available', true),
             'status'          => $data['stock'] > 10 ? 'in_stock' : ($data['stock'] > 0 ? 'low_stock' : 'out_of_stock'),
         ]);
+
+        // Delete images the farmer checked off
+        if ($request->filled('delete_images')) {
+            $toDelete = ProductImage::whereIn('id', $request->delete_images)
+                ->where('product_id', $product->id)
+                ->get();
+
+            foreach ($toDelete as $img) {
+                Storage::disk('public')->delete($img->path);
+                $img->delete();
+            }
+
+            // If we deleted the primary, promote the next remaining image
+            if (!$product->images()->where('is_primary', true)->exists()) {
+                $product->images()->first()?->update(['is_primary' => true]);
+            }
+        }
 
         $tagIds = $data['tags'] ?? [];
 
