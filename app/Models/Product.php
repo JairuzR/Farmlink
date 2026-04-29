@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\Category;
+use App\Models\Tag;
+use App\Models\ProductImage;
+use App\Models\Review;
+use App\Models\OrderItem;
+use App\Models\User;
 
 class Product extends Model
 {
@@ -78,11 +84,11 @@ class Product extends Model
         return $query->whereHas('category', fn($q) => $q->where('slug', $categorySlug));
     }
 
-    public function scopeSearch($query, $search)
-    {
-        return $query->where('title', 'like', "%{$search}%")
-                     ->orWhere('description', 'like', "%{$search}%");
-    }
+    // public function scopeSearch($query, $search)
+    // {
+    //     return $query->where('title', 'like', "%{$search}%")
+    //                  ->orWhere('description', 'like', "%{$search}%");
+    // }
 
     // Helpers
     public function averageRating()
@@ -93,5 +99,20 @@ class Product extends Model
     public function isLowStock(): bool
     {
         return $this->stock > 0 && $this->stock <= 10;
+    }
+
+    public function scopeSearch($query, $search)
+    {
+        $query->where(function ($q) use ($search) {
+
+            $q->where('title', 'like', "%{$search}%")
+            ->orWhere('description', 'like', "%{$search}%")
+
+            ->orWhereHas('farmer', function ($q2) use ($search) {
+                $q2->where('name', 'like', "%{$search}%")
+                    ->orWhere('farm_name', 'like', "%{$search}%");
+            });
+
+        });
     }
 }

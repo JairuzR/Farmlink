@@ -14,24 +14,12 @@ class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        // Get the seeded farmer (or create one if none exists)
-        $farmer = User::where('role', 'farmer')->where('is_approved', true)->first();
+        $farmers = User::where('role', 'farmer')
+            ->where('is_approved', true)
+            ->get();
 
-        if (!$farmer) {
-            $farmer = User::create([
-                'name'              => 'Juan dela Cruz',
-                'email'             => 'farmer@farmlink.test',
-                'password'          => bcrypt('password'),
-                'role'              => 'farmer',
-                'phone'             => '09171234567',
-                'address'           => 'Valencia City, Bukidnon',
-                'farm_name'         => 'Dela Cruz Farm',
-                'bio'               => 'Fresh produce straight from the highlands of Bukidnon.',
-                'latitude'          => 7.9063,
-                'longitude'         => 125.0942,
-                'is_approved'       => true,
-                'email_verified_at' => now(),
-            ]);
+        if ($farmers->isEmpty()) {
+            throw new \Exception('No farmers found. Run FarmerSeeder first.');
         }
 
         $products = [
@@ -67,7 +55,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Sweet and fragrant Lakatan bananas from our farm. Sold per kilo, minimum 2 kilos per order.',
                 'price'       => 60.00,
                 'unit'        => 'kg',
-                'stock'       => 5,  // low stock on purpose
+                'stock'       => 5,
                 'category'    => 'Fruits',
                 'tags'        => ['fruits', 'banana', 'fresh'],
             ],
@@ -94,7 +82,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Fresh and tender string beans. Sold per bundle. Harvested early morning for maximum freshness.',
                 'price'       => 20.00,
                 'unit'        => 'bundle',
-                'stock'       => 0, // out of stock on purpose
+                'stock'       => 0,
                 'category'    => 'Vegetables',
                 'tags'        => ['vegetables', 'fresh'],
             ],
@@ -110,35 +98,50 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($products as $data) {
-            // Find or get category
+
+            $farmer = $farmers->random();
+
             $category = Category::where('name', $data['category'])->first();
 
             $stock = $data['stock'];
-            $status = $stock > 10 ? 'in_stock' : ($stock > 0 ? 'low_stock' : 'out_of_stock');
+            $status = $stock > 10
+                ? 'in_stock'
+                : ($stock > 0 ? 'low_stock' : 'out_of_stock');
 
             $product = Product::create([
-                'user_id'      => $farmer->id,
-                'category_id'  => $category?->id,
-                'title'        => $data['title'],
-                'slug'         => Str::slug($data['title']) . '-' . Str::random(5),
-                'description'  => $data['description'],
-                'price'        => $data['price'],
-                'unit'         => $data['unit'],
-                'stock'        => $stock,
-                'minimum_order'=> 1,
-                'status'       => $status,
-                'is_available' => $stock > 0,
+                'user_id'       => $farmer->id,
+                'category_id'   => $category?->id,
+                'title'         => $data['title'],
+                'slug'          => Str::slug($data['title']) . '-' . Str::random(5),
+                'description'   => $data['description'],
+                'price'         => $data['price'],
+                'unit'          => $data['unit'],
+                'stock'         => $stock,
+                'minimum_order' => 1,
+                'status'        => $status,
+                'is_available'  => $stock > 0,
             ]);
-
-            // Attach tags
             $tagIds = [];
             foreach ($data['tags'] as $tagName) {
                 $tag = Tag::whereNull('user_id')
-                    ->where('name', 'like', "%{$tagName}%")
+                    ->where('slug', Str::slug($tagName))
                     ->first();
-                if ($tag) $tagIds[] = $tag->id;
+
+                if ($tag) {
+                    $tagIds[] = $tag->id;
+                }
             }
-            if ($tagIds) $product->tags()->sync($tagIds);
+
+            if (!empty($tagIds)) {
+                $product->tags()->sync($tagIds);
+            }
+
+            // Optional: Add placeholder image
+            ProductImage::create([
+                'product_id' => $product->id,
+                'path' => 'products/sample.jpg', // make sure this exists in storage
+                'is_primary' => true,
+            ]);
         }
     }
 }

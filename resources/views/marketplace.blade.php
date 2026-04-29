@@ -18,7 +18,7 @@
                 type="text"
                 name="search"
                 value="{{ request('search') }}"
-                placeholder="Search products or descriptions..."
+                placeholder="Search products or descriptions, or farms..."
                 class="w-72 rounded-lg border border-slate-300 px-4 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500"
             />
             <select name="sort" class="rounded-lg border border-slate-300 px-4 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500">
