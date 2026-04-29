@@ -79,10 +79,10 @@ class Product extends Model
         return $query->where('is_available', true)->where('status', '!=', 'out_of_stock');
     }
 
-    public function scopeByCategory($query, $categorySlug)
-    {
-        return $query->whereHas('category', fn($q) => $q->where('slug', $categorySlug));
-    }
+    // public function scopeByCategory($query, $categorySlug)
+    // {
+    //     return $query->whereHas('category', fn($q) => $q->where('slug', $categorySlug));
+    // }
 
     // public function scopeSearch($query, $search)
     // {
@@ -113,6 +113,13 @@ class Product extends Model
                     ->orWhere('farm_name', 'like', "%{$search}%");
             });
 
+        });
+    }
+
+    public function scopeByCategory($query, $slug)
+    {
+        return $query->whereHas('category', function ($q) use ($slug) {
+            $q->where('slug', $slug);
         });
     }
 }

@@ -24,76 +24,40 @@ class ProductSeeder extends Seeder
 
         $products = [
             [
-                'title'       => 'Fresh Sayote',
-                'description' => 'Freshly harvested sayote from the highlands. Great for sinigang, stir fry, or as a healthy snack. Grown without pesticides.',
-                'price'       => 35.00,
-                'unit'        => 'kg',
-                'stock'       => 150,
-                'category'    => 'Vegetables',
-                'tags'        => ['organic', 'fresh', 'vegetables'],
+                'title' => 'Fresh Sayote',
+                'description' => 'Freshly harvested sayote from the highlands.',
+                'price' => 35.00,
+                'unit' => 'kg',
+                'stock' => 150,
+                'category' => 'Vegetables',
+                'tags' => ['Organic', 'Fresh', 'Vegetables'],
             ],
             [
-                'title'       => 'Native Chicken Eggs',
-                'description' => 'Free-range native chicken eggs. Rich in flavor and nutrients compared to commercial eggs. Collected fresh daily.',
-                'price'       => 12.00,
-                'unit'        => 'piece',
-                'stock'       => 200,
-                'category'    => 'Poultry & Eggs',
-                'tags'        => ['eggs', 'native', 'free-range'],
+                'title' => 'Native Chicken Eggs',
+                'description' => 'Free-range native chicken eggs.',
+                'price' => 12.00,
+                'unit' => 'piece',
+                'stock' => 200,
+                'category' => 'Poultry & Eggs',
+                'tags' => ['Eggs', 'Native', 'Free-Range'],
             ],
             [
-                'title'       => 'Organic Pechay',
-                'description' => 'Crisp and tender pechay grown organically. Perfect for soups, stir fry, and salads. Harvested every morning.',
-                'price'       => 25.00,
-                'unit'        => 'bundle',
-                'stock'       => 80,
-                'category'    => 'Vegetables',
-                'tags'        => ['organic', 'leafy', 'vegetables'],
+                'title' => 'Organic Pechay',
+                'description' => 'Crisp and tender pechay grown organically.',
+                'price' => 25.00,
+                'unit' => 'bundle',
+                'stock' => 80,
+                'category' => 'Leafy Greens',
+                'tags' => ['Organic', 'Vegetables', 'Fresh'],
             ],
             [
-                'title'       => 'Lakatan Banana',
-                'description' => 'Sweet and fragrant Lakatan bananas from our farm. Sold per kilo, minimum 2 kilos per order.',
-                'price'       => 60.00,
-                'unit'        => 'kg',
-                'stock'       => 5,
-                'category'    => 'Fruits',
-                'tags'        => ['fruits', 'banana', 'fresh'],
-            ],
-            [
-                'title'       => 'White Corn',
-                'description' => 'Freshly harvested white corn. Great for boiling, grilling, or making cornmeal. Comes in bundles of 5 ears.',
-                'price'       => 45.00,
-                'unit'        => 'bundle',
-                'stock'       => 60,
-                'category'    => 'Grains & Crops',
-                'tags'        => ['corn', 'grains', 'fresh'],
-            ],
-            [
-                'title'       => 'Fresh Ginger (Luya)',
-                'description' => 'Freshly harvested ginger root. Strong aroma and flavor. Great for cooking, tea, and medicinal use.',
-                'price'       => 80.00,
-                'unit'        => 'kg',
-                'stock'       => 40,
-                'category'    => 'Herbs & Spices',
-                'tags'        => ['herbs', 'spices', 'organic'],
-            ],
-            [
-                'title'       => 'Sitaw (String Beans)',
-                'description' => 'Fresh and tender string beans. Sold per bundle. Harvested early morning for maximum freshness.',
-                'price'       => 20.00,
-                'unit'        => 'bundle',
-                'stock'       => 0,
-                'category'    => 'Vegetables',
-                'tags'        => ['vegetables', 'fresh'],
-            ],
-            [
-                'title'       => 'Sweet Kamote',
-                'description' => 'Naturally sweet sweet potato from Bukidnon highlands. Perfect for boiling, frying, or making kakanin.',
-                'price'       => 30.00,
-                'unit'        => 'kg',
-                'stock'       => 120,
-                'category'    => 'Root Crops',
-                'tags'        => ['root crops', 'organic', 'fresh'],
+                'title' => 'Lakatan Banana',
+                'description' => 'Sweet Lakatan bananas from our farm.',
+                'price' => 60.00,
+                'unit' => 'kg',
+                'stock' => 50,
+                'category' => 'Fruits',
+                'tags' => ['Fruits', 'Fresh'],
             ],
         ];
 
@@ -101,45 +65,54 @@ class ProductSeeder extends Seeder
 
             $farmer = $farmers->random();
 
-            $category = Category::where('name', $data['category'])->first();
+            // ✅ STRICT category match (prevents null silently)
+            $category = Category::where('slug', Str::slug($data['category']))->first();
+
+            if (!$category) {
+                throw new \Exception("Category not found: {$data['category']}");
+            }
 
             $stock = $data['stock'];
+
             $status = $stock > 10
                 ? 'in_stock'
                 : ($stock > 0 ? 'low_stock' : 'out_of_stock');
 
             $product = Product::create([
-                'user_id'       => $farmer->id,
-                'category_id'   => $category?->id,
-                'title'         => $data['title'],
-                'slug'          => Str::slug($data['title']) . '-' . Str::random(5),
-                'description'   => $data['description'],
-                'price'         => $data['price'],
-                'unit'          => $data['unit'],
-                'stock'         => $stock,
+                'user_id' => $farmer->id,
+                'category_id' => $category->id,
+                'title' => $data['title'],
+                'slug' => Str::slug($data['title']) . '-' . Str::random(5),
+                'description' => $data['description'],
+                'price' => $data['price'],
+                'unit' => $data['unit'],
+                'stock' => $stock,
                 'minimum_order' => 1,
-                'status'        => $status,
-                'is_available'  => $stock > 0,
+                'status' => $status,
+                'is_available' => $stock > 0,
             ]);
+
+            // ✅ TAGS (now guaranteed to exist or be created)
             $tagIds = [];
+
             foreach ($data['tags'] as $tagName) {
-                $tag = Tag::whereNull('user_id')
-                    ->where('slug', Str::slug($tagName))
-                    ->first();
+                $tag = Tag::firstOrCreate(
+                    ['slug' => Str::slug($tagName)],
+                    [
+                        'name' => $tagName,
+                        'slug' => Str::slug($tagName),
+                    ]
+                );
 
-                if ($tag) {
-                    $tagIds[] = $tag->id;
-                }
+                $tagIds[] = $tag->id;
             }
 
-            if (!empty($tagIds)) {
-                $product->tags()->sync($tagIds);
-            }
+            $product->tags()->sync($tagIds);
 
-            // Optional: Add placeholder image
+            // ✅ IMAGE
             ProductImage::create([
                 'product_id' => $product->id,
-                'path' => 'products/sample.jpg', // make sure this exists in storage
+                'path' => 'products/sample.jpg',
                 'is_primary' => true,
             ]);
         }
