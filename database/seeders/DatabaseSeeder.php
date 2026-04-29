@@ -32,6 +32,14 @@ class DatabaseSeeder extends Seeder
                 'password' => 'password',
             ],
         );
+        User::updateOrCreate(
+            ['email' => 'farmer@example.com'],
+            [
+                'name' => 'Test Farmer',
+                'role' => 'farmer',
+                'password' => 'password',
+            ],
+        );
 
         $this->call([
             CategorySeeder::class,

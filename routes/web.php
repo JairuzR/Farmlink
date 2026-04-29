@@ -12,18 +12,25 @@ use App\Models\User;
 
 use Illuminate\Support\Facades\Route;
 
+// --- Public routes ---
 Route::view('/', 'welcome')->name('home');
 Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace');
 Route::view('/farmers', 'farmers')->name('farmers');
-Route::get('/cart', [CartController::class, 'show'])->name('cart');
-Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
-Route::patch('/cart/{product}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
-Route::post('/checkout', [OrderController::class, 'checkout'])->name('checkout');
-Route::get('/orders/pending', [OrderController::class, 'pending'])->name('orders.pending');
-Route::get('/orders/delivered', [OrderController::class, 'delivered'])->name('orders.delivered');
-Route::patch('/orders/{order}/delivered', [OrderController::class, 'markDelivered'])->name('orders.mark-delivered');
+Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
+// --- Cart & Orders (auth required) ---
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/cart', [CartController::class, 'show'])->name('cart');
+    Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+    Route::patch('/cart/{product}', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
+    Route::post('/checkout', [OrderController::class, 'checkout'])->name('checkout');
+    Route::get('/orders/pending', [OrderController::class, 'pending'])->name('orders.pending');
+    Route::get('/orders/delivered', [OrderController::class, 'delivered'])->name('orders.delivered');
+    Route::patch('/orders/{order}/delivered', [OrderController::class, 'markDelivered'])->name('orders.mark-delivered');
+});
+
+// --- Dashboard (approved check so unapproved farmers can't sneak in) ---
 Route::get('/dashboard', function () {
     $user = auth()->user();
 
@@ -41,17 +48,19 @@ Route::get('/dashboard', function () {
         return view('dashboard', compact('products', 'totalRevenue', 'activeOrders', 'avgRating'));
     }
 
-    // Buyer dashboard (basic for now)
+    // Buyer dashboard
     $recentOrders = $user->buyerOrders()->with('items.product')->latest()->take(5)->get();
     return view('dashboard', compact('recentOrders'));
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'approved'])->name('dashboard');
 
+// --- Profile ---
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// --- Admin ---
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/farmers/pending', [AdminController::class, 'pendingFarmers'])->name('farmers.pending');
     Route::patch('/farmers/{user}/approve', [AdminController::class, 'approveFarmer'])->name('farmers.approve');
@@ -62,6 +71,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     })->name('farmers.id');
 });
 
+// --- 2FA ---
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
     Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm'])->name('2fa.confirm');
@@ -70,8 +80,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
 });
 
-Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+// --- Buyer: leave a review ---
+Route::post('/products/{product:slug}/reviews', [ReviewController::class, 'store'])
+    ->name('reviews.store')
+    ->middleware(['auth', 'verified', 'role:buyer']);
 
+// --- Farmer: product management ---
 Route::middleware(['auth', 'verified', 'role:farmer', 'approved'])->group(function () {
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -79,9 +93,6 @@ Route::middleware(['auth', 'verified', 'role:farmer', 'approved'])->group(functi
     Route::patch('/products/{product:slug}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product:slug}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::patch('/products/{product:slug}/toggle', [ProductController::class, 'toggleAvailability'])->name('products.toggle');
-    Route::post('/products/{product:slug}/reviews', [ReviewController::class, 'store'])
-    ->name('reviews.store')
-    ->middleware(['auth', 'verified', 'role:buyer']);
 });
 
 require __DIR__.'/auth.php';

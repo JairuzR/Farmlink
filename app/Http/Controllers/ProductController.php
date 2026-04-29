@@ -190,7 +190,7 @@ class ProductController extends Controller
         $this->authorize('delete', $product);
         $product->delete();
 
-        return redirect()->route('farmer.dashboard')->with('status', 'Product removed.');
+        return redirect()->route('dashboard')->with('status', 'Product removed.');
     }
 
     // Farmer: toggle availability

@@ -12,6 +12,11 @@ class Review extends Model
         'rating' => 'integer',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function buyer()
     {
         return $this->belongsTo(User::class, 'user_id');
