@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
@@ -17,17 +20,19 @@ return new class extends Migration
             $table->boolean('is_approved')->default(false)->after('farmer_id_path');
             $table->decimal('latitude', 10, 7)->nullable()->after('is_approved');
             $table->decimal('longitude', 10, 7)->nullable()->after('latitude');
-            $table->string('facebook_url')->nullable()->after('longitude');
-            $table->text('bio')->nullable()->after('facebook_url');
+            $table->text('bio')->nullable()->after('longitude');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
                 'role', 'phone', 'address', 'farm_name', 'farmer_id_path',
-                'is_approved', 'latitude', 'longitude', 'facebook_url', 'bio',
+                'is_approved', 'latitude', 'longitude', 'bio',
             ]);
         });
     }

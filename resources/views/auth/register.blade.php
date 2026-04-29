@@ -96,11 +96,36 @@
                         </div>
                         <p class="text-xs text-gray-400">You can set your exact location later from your profile.</p>
 
-                        <!-- Facebook -->
+                        <!-- Social Links (dynamic) -->
                         <div>
-                            <x-input-label for="facebook_url" :value="__('Facebook Page URL (optional)')" />
-                            <x-text-input id="facebook_url" class="block mt-1 w-full" type="url" name="facebook_url" :value="old('facebook_url')" />
-                            <x-input-error :messages="$errors->get('facebook_url')" class="mt-2" />
+                            <x-input-label :value="__('Social Media Links (optional)')" />
+                            <p class="text-xs text-gray-400 mb-2">Add your Facebook, Instagram, TikTok, or any link.</p>
+
+                            <div id="social-links-container" class="space-y-3">
+                                <div class="social-link-row flex gap-2 items-center">
+                                    <select name="social_platform[]"
+                                        class="border-gray-300 rounded-md shadow-sm text-sm w-36 h-10">
+                                        <option value="facebook">Facebook</option>
+                                        <option value="instagram">Instagram</option>
+                                        <option value="tiktok">TikTok</option>
+                                        <option value="youtube">YouTube</option>
+                                        <option value="x">X (Twitter)</option>
+                                        <option value="shopee">Shopee</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <input type="text" name="social_label[]" placeholder="Label (optional)"
+                                        class="border-gray-300 rounded-md shadow-sm text-sm h-10 w-32" />
+                                    <input type="url" name="social_url[]" placeholder="https://..."
+                                        class="border-gray-300 rounded-md shadow-sm text-sm h-10 flex-1" />
+                                    <button type="button" onclick="removeSocialRow(this)"
+                                        class="text-red-400 hover:text-red-600 text-lg leading-none px-1">✕</button>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="addSocialRow()"
+                                class="mt-2 text-sm text-emerald-600 hover:underline font-medium">+ Add another link</button>
+
+                            <x-input-error :messages="$errors->get('social_url.*')" class="mt-2" />
                         </div>
 
                         <!-- Bio -->
@@ -139,6 +164,38 @@
                 <script>
                     function toggleFarmerFields(show) {
                         document.getElementById('farmer-fields').classList.toggle('hidden', !show);
+                    }
+
+                    function addSocialRow() {
+                        const container = document.getElementById('social-links-container');
+                        const row = document.createElement('div');
+                        row.className = 'social-link-row flex gap-2 items-center';
+                        row.innerHTML = `
+                            <select name="social_platform[]"
+                                class="border-gray-300 rounded-md shadow-sm text-sm w-36 h-10">
+                                <option value="facebook">Facebook</option>
+                                <option value="instagram">Instagram</option>
+                                <option value="tiktok">TikTok</option>
+                                <option value="youtube">YouTube</option>
+                                <option value="x">X (Twitter)</option>
+                                <option value="shopee">Shopee</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="text" name="social_label[]" placeholder="Label (optional)"
+                                class="border-gray-300 rounded-md shadow-sm text-sm h-10 w-32" />
+                            <input type="url" name="social_url[]" placeholder="https://..."
+                                class="border-gray-300 rounded-md shadow-sm text-sm h-10 flex-1" />
+                            <button type="button" onclick="removeSocialRow(this)"
+                                class="text-red-400 hover:text-red-600 text-lg leading-none px-1">✕</button>
+                        `;
+                        container.appendChild(row);
+                    }
+
+                    function removeSocialRow(btn) {
+                        const rows = document.querySelectorAll('.social-link-row');
+                        if (rows.length > 1) {
+                            btn.closest('.social-link-row').remove();
+                        }
                     }
                 </script>
 

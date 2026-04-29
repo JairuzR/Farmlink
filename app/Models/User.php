@@ -14,7 +14,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name', 'email', 'password', 'role', 'phone', 'address',
         'farm_name', 'farmer_id_path', 'is_approved',
-        'latitude', 'longitude', 'facebook_url', 'bio',
+        'latitude', 'longitude', 'bio', 'two_factor_secret', 'two_factor_confirmed',
     ];
 
     protected $hidden = ['password', 'remember_token'];
