@@ -28,9 +28,14 @@ class DatabaseSeeder extends Seeder
             ['email' => 'test@example.com'],
             [
                 'name' => 'Test User',
-                'role' => 'user',
+                'role' => 'buyer',
                 'password' => 'password',
             ],
         );
+
+        $this->call([
+            CategorySeeder::class,
+            TagSeeder::class,
+        ]);
     }
 }
