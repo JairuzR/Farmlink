@@ -48,6 +48,10 @@
                             </a>
                         @endif
 
+                        @if(auth()->user()->isFarmer())
+                            <a href="{{ route('orders.incoming') }}" class="hover:text-green-700">Orders</a>
+                        @endif
+
                         {{-- User dropdown --}}
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open"

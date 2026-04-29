@@ -109,6 +109,9 @@ Route::middleware(['auth', 'verified', 'role:farmer', 'approved'])->group(functi
     Route::patch('/products/{product:slug}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product:slug}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::patch('/products/{product:slug}/toggle', [ProductController::class, 'toggleAvailability'])->name('products.toggle');
+    Route::get('/orders/incoming', [OrderController::class, 'incoming'])->name('orders.incoming');
+    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name(name: 'orders.update-status');
+
 });
 
 require __DIR__.'/auth.php';
